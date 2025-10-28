@@ -1,0 +1,191 @@
+'Option Private Module
+Sub ChangeIng()
+    On Error GoTo EndOfSub
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Dim inputSheet As Worksheet
+    Set inputSheet = sheet_input
+    Dim ingText As String
+    'Dim alteredText As String
+
+    'Dim lastRow As Long
+    'Dim i As Long
+    
+    With inputSheet
+        ingText = .Range("C2").Value
+'        lastRow = .Range("A" & Rows.Count).End(xlUp).row
+'        For i = 2 To lastRow
+'            ingText = ingText & " " & .Cells(i, 1).Value
+'        Next i
+'
+'        .Range("D24").ClearContents
+        
+        If Len(ingText) = 0 Then
+            Application.EnableEvents = True
+            Exit Sub
+        End If
+        
+        ingText = LCase(ingText)
+        
+        If InStr(1, ingText, "{") Then
+            ingText = Replace(ingText, "{", "(")
+        End If
+        
+        If InStr(1, ingText, "}") Then
+            ingText = Replace(ingText, "}", ")")
+        End If
+        
+        If InStr(1, ingText, "*") Then 'look for asterisks, if found run AsteriskRemover
+        
+        .Range("C6").Value = Application.WorksheetFunction.Trim((fixPara(AsteriskRemover(ingText))))
+        '.Range("D25").Value = "Ingredients: " & Application.WorksheetFunction.Trim(fixPara(AsteriskRemover(ingText)))
+        Else
+        .Range("C6").Value = Application.WorksheetFunction.Trim(fixPara(ingText))
+'        If InStr(1, ingText, "ingredients") Then
+'            .Range("D25").Value = Application.WorksheetFunction.Trim(fixPara(ingText))
+'            Else
+'            .Range("D25").Value = "Ingredients: " & Application.WorksheetFunction.Trim(fixPara(ingText))
+'        End If
+        End If
+        
+    End With
+
+EndOfSub:
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+End Sub
+
+Function fixPara(ingText As String) As String
+    
+    Dim i As Integer
+    Dim k As Integer
+    Dim curr As String
+    Dim prev As String
+    Dim output As String
+    Dim leftParen As Boolean
+    Dim leftBracket As Boolean
+    Dim rightParen As Boolean
+    Dim rightBracket As Boolean
+    
+    output = ""
+    k = 0
+    prev = " "
+     
+    For i = 1 To Len(ingText)
+        curr = Mid(ingText, i, 1) 'gets the current letter
+    
+        'Correct casing. k = 0 means outside parentheses. Characters after a space should be capitalized.
+        If k = 0 And prev = " " Then
+            curr = UCase(curr)
+        Else
+            curr = LCase(curr)
+        End If
+        
+        'Fix parentheses/brackets. Track value of k to determine whether a bracket or parentheses is next.
+        'Modulo function always returns 0 or 1, which correspond to parentheses or bracket, respectively
+        If isLeftParenBrac(curr) Then
+            If k Mod 2 = 0 Then
+                curr = "("
+            ElseIf k Mod 2 = 1 Then
+                curr = "["
+            End If
+            k = k + 1
+        ElseIf isRightParenBrac(curr) Then
+            k = k - 1
+            If k Mod 2 = 0 Then
+                curr = ")"
+            ElseIf k Mod 2 = 1 Then
+                curr = "]"
+            End If
+        End If
+        output = output & curr
+        prev = curr
+    Next i
+    
+    'Fix casing of *non-GMO and **organic at end
+    'output = Replace(output, "*non-GMO", "*Non-GMO", Compare:=vbTextCompare)
+    output = Replace(output, "**organic", "**Organic", Compare:=vbTextCompare)
+    
+    'output result. Not accurate unless parentheses/brackets are balanced, so don't allow output
+    If k = 0 Then
+        fixPara = output
+    Else
+        fixPara = "Parentheses/brackets are unbalanced."
+    End If
+        
+End Function
+
+Function getTopLevelCount(ingText As String) As Long
+
+    Dim i As Integer
+    Dim k As Integer
+    Dim curr As String
+    Dim leftParen As Boolean
+    Dim leftBracket As Boolean
+    Dim rightParen As Boolean
+    Dim rightBracket As Boolean
+    
+    getTopLevelCount = 1 ' ing statement always has at least 1 item
+    
+    k = 0 'when k = 0, we are outside parantheses
+
+    For i = 1 To Len(ingText)
+        curr = Mid(ingText, i, 1) 'gets the current letter
+    
+        If k = 0 And curr = "," Then
+            getTopLevelCount = getTopLevelCount + 1
+        End If
+        
+        'Track value of k to determine when we are outside parantheses/brackets
+        If isLeftParenBrac(curr) Then
+            k = k + 1
+        ElseIf isRightParenBrac(curr) Then
+            k = k - 1
+        End If
+
+    Next i
+
+End Function
+
+
+Private Function isLeftParenBrac(text As String) As Boolean
+    'set default return value
+    isLeftParenBrac = False
+    
+    If text = "(" Then
+        isLeftParenBrac = True
+    ElseIf text = "[" Then
+        isLeftParenBrac = True
+    End If
+End Function
+
+Private Function isRightParenBrac(text As String) As Boolean
+    'set default return value
+    isRightParenBrac = False
+    
+    If text = ")" Then
+        isRightParenBrac = True
+    ElseIf text = "]" Then
+        isRightParenBrac = True
+    End If
+End Function
+
+Function AsteriskRemover(text As String) As String
+
+    Dim gmoA As String
+    Dim gmoB As String
+    Dim gmoC As String
+    Dim gmoD As String
+    
+    gmoA = "non-gmo."
+    gmoB = "non gmo"
+    gmoC = "non-gmo"
+    gmoD = "gmo"
+    
+    text = Replace(text, "*", "")
+    text = Replace(text, gmoA, "")
+    text = Replace(text, gmoC, "")
+    text = Replace(text, gmoB, "")
+    text = Replace(text, gmoD, "")
+    AsteriskRemover = text
+End Function
