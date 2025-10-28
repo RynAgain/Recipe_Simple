@@ -22,13 +22,14 @@
     
     console.log('='.repeat(60));
     console.log('🛠️ Recipe Tools - Whole Foods Edition');
-    console.log('Version: 1.0.102');
+    
     console.log('='.repeat(60));
     
     // ============================================
     // CONFIGURATION
     // ============================================
-    const CURRENT_VERSION = '1.0.1';
+    const CURRENT_VERSION = '1.0.102';
+    console.log(CURRENT_VERSION);
     const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js';
     const VERSION_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
     
