@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Recipe Tools - Whole Foods Edition
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.102
 // @description  Nutrition and recipe text processing tools with Whole Foods branding
 // @author       RynAgain
 // @match        *://*/*
@@ -22,7 +22,7 @@
     
     console.log('='.repeat(60));
     console.log('🛠️ Recipe Tools - Whole Foods Edition');
-    console.log('Version: 1.0.1');
+    console.log('Version: 1.0.102');
     console.log('='.repeat(60));
     
     // ============================================
