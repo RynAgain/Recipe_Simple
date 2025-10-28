@@ -227,9 +227,25 @@
         const inputSection = document.createElement('div');
         theme.applyStyles(inputSection, theme.styles.inputGroup);
         
+        const inputLabelRow = document.createElement('div');
+        inputLabelRow.style.display = 'flex';
+        inputLabelRow.style.justifyContent = 'space-between';
+        inputLabelRow.style.alignItems = 'center';
+        inputLabelRow.style.marginBottom = '6px';
+        
         const inputLabel = document.createElement('label');
         inputLabel.textContent = 'Input Recipe Text:';
         theme.applyStyles(inputLabel, theme.styles.label);
+        inputLabel.style.marginBottom = '0';
+        
+        const inputCharCount = document.createElement('span');
+        inputCharCount.id = 'inputCharCount';
+        inputCharCount.textContent = '0 characters';
+        inputCharCount.style.fontSize = '12px';
+        inputCharCount.style.color = theme.colors.textSecondary;
+        
+        inputLabelRow.appendChild(inputLabel);
+        inputLabelRow.appendChild(inputCharCount);
         
         const inputTextarea = document.createElement('textarea');
         inputTextarea.id = 'recipeInput';
@@ -238,7 +254,7 @@
         inputTextarea.placeholder = 'Paste your recipe ingredients here...';
         theme.applyStyles(inputTextarea, theme.styles.textarea);
         
-        inputSection.appendChild(inputLabel);
+        inputSection.appendChild(inputLabelRow);
         inputSection.appendChild(inputTextarea);
         
         // Options section
@@ -302,9 +318,25 @@
         const outputSection = document.createElement('div');
         theme.applyStyles(outputSection, theme.styles.inputGroup);
         
+        const outputLabelRow = document.createElement('div');
+        outputLabelRow.style.display = 'flex';
+        outputLabelRow.style.justifyContent = 'space-between';
+        outputLabelRow.style.alignItems = 'center';
+        outputLabelRow.style.marginBottom = '6px';
+        
         const outputLabel = document.createElement('label');
         outputLabel.textContent = 'Simplified Output:';
         theme.applyStyles(outputLabel, theme.styles.label);
+        outputLabel.style.marginBottom = '0';
+        
+        const outputCharCount = document.createElement('span');
+        outputCharCount.id = 'outputCharCount';
+        outputCharCount.textContent = '0 characters';
+        outputCharCount.style.fontSize = '12px';
+        outputCharCount.style.color = theme.colors.textSecondary;
+        
+        outputLabelRow.appendChild(outputLabel);
+        outputLabelRow.appendChild(outputCharCount);
         
         const outputTextarea = document.createElement('textarea');
         outputTextarea.id = 'recipeOutput';
@@ -317,7 +349,7 @@
             backgroundColor: theme.colors.lightGray
         });
         
-        outputSection.appendChild(outputLabel);
+        outputSection.appendChild(outputLabelRow);
         outputSection.appendChild(outputTextarea);
         
         // Copy button
@@ -359,6 +391,20 @@
     // ============================================
     
     /**
+     * Update character count for a textarea
+     * @param {string} textareaId - ID of the textarea
+     * @param {string} counterId - ID of the counter element
+     */
+    function updateCharCount(textareaId, counterId) {
+        const textarea = document.getElementById(textareaId);
+        const counter = document.getElementById(counterId);
+        if (textarea && counter) {
+            const count = textarea.value.length;
+            counter.textContent = `${count.toLocaleString()} character${count !== 1 ? 's' : ''}`;
+        }
+    }
+    
+    /**
      * Handle process button click
      */
     function handleProcessClick() {
@@ -385,10 +431,12 @@
         
         if (result.success) {
             outputTextarea.value = result.text;
+            updateCharCount('recipeOutput', 'outputCharCount');
             successMsg.textContent = '✓ Recipe simplified successfully!';
             successMsg.style.display = 'block';
         } else {
             outputTextarea.value = '';
+            updateCharCount('recipeOutput', 'outputCharCount');
             errorMsg.textContent = result.error;
             errorMsg.style.display = 'block';
         }
@@ -447,9 +495,19 @@
     function setupEventListeners() {
         const processButton = document.getElementById('processButton');
         const copyButton = document.getElementById('copyButton');
+        const inputTextarea = document.getElementById('recipeInput');
         
         processButton.addEventListener('click', handleProcessClick);
         copyButton.addEventListener('click', handleCopyClick);
+        
+        // Update character count as user types
+        inputTextarea.addEventListener('input', () => {
+            updateCharCount('recipeInput', 'inputCharCount');
+        });
+        
+        // Initialize character counts
+        updateCharCount('recipeInput', 'inputCharCount');
+        updateCharCount('recipeOutput', 'outputCharCount');
     }
     
     // ============================================
