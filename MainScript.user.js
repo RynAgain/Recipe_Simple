@@ -8,10 +8,10 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
-// @require      file:///C:/Users/kryasatt/Documents/Source/Recipe_Simple/modules/Wholefoods-Theme.js
-// @require      file:///C:/Users/kryasatt/Documents/Source/Recipe_Simple/modules/UI-Core.js
-// @require      file:///C:/Users/kryasatt/Documents/Source/Recipe_Simple/modules/UnitConverter.js
-// @require      file:///C:/Users/kryasatt/Documents/Source/Recipe_Simple/modules/RecipeSimplifier.js
+// @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/Wholefoods-Theme.js
+// @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/UI-Core.js
+// @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/UnitConverter.js
+// @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/RecipeSimplifier.js
 // @run-at       document-end
 // @updateURL    https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js
 // @downloadURL  https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js
@@ -22,14 +22,13 @@
     
     console.log('='.repeat(60));
     console.log('🛠️ Recipe Tools - Whole Foods Edition');
-    
+    console.log('Version: 1.0.1');
     console.log('='.repeat(60));
     
     // ============================================
     // CONFIGURATION
     // ============================================
     const CURRENT_VERSION = '1.0.1';
-    console.log(CURRENT_VERSION);
     const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js';
     const VERSION_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
     

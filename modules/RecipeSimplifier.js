@@ -396,6 +396,17 @@
         customButtons.style.display = 'flex';
         customButtons.style.gap = '6px';
         
+        const importBtn = document.createElement('button');
+        importBtn.id = 'importCustomBtn';
+        importBtn.textContent = '📤 Import';
+        importBtn.style.fontSize = '11px';
+        importBtn.style.padding = '4px 8px';
+        importBtn.style.border = `1px solid ${theme.colors.border}`;
+        importBtn.style.borderRadius = '4px';
+        importBtn.style.backgroundColor = theme.colors.white;
+        importBtn.style.cursor = 'pointer';
+        importBtn.title = 'Import CSV file to append rules';
+        
         const exportBtn = document.createElement('button');
         exportBtn.id = 'exportCustomBtn';
         exportBtn.textContent = '📥 Export';
@@ -405,6 +416,7 @@
         exportBtn.style.borderRadius = '4px';
         exportBtn.style.backgroundColor = theme.colors.white;
         exportBtn.style.cursor = 'pointer';
+        exportBtn.title = 'Export rules to CSV file';
         
         const addBtn = document.createElement('button');
         addBtn.id = 'addCustomBtn';
@@ -416,7 +428,9 @@
         addBtn.style.backgroundColor = theme.colors.primaryGreen;
         addBtn.style.color = theme.colors.white;
         addBtn.style.cursor = 'pointer';
+        addBtn.title = 'Add a new custom replacement';
         
+        customButtons.appendChild(importBtn);
         customButtons.appendChild(exportBtn);
         customButtons.appendChild(addBtn);
         customHeader.appendChild(customTitle);
@@ -544,7 +558,18 @@
         const counter = document.getElementById(counterId);
         if (textarea && counter) {
             const count = textarea.value.length;
+            const theme = window.WholeFoodsTheme;
+            
             counter.textContent = `${count.toLocaleString()} character${count !== 1 ? 's' : ''}`;
+            
+            // Change color to red if at or over 1480 characters
+            if (count >= 1480) {
+                counter.style.color = theme.colors.error;
+                counter.style.fontWeight = '600';
+            } else {
+                counter.style.color = theme.colors.textSecondary;
+                counter.style.fontWeight = 'normal';
+            }
         }
     }
     
@@ -759,6 +784,108 @@
         }
     }
     
+    /**
+     * Import custom replacements from CSV file (appends to existing)
+     */
+    function importCustomReplacements() {
+        // Create file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.csv';
+        fileInput.style.display = 'none';
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n');
+                    
+                    // Skip header row
+                    const dataLines = lines.slice(1).filter(line => line.trim());
+                    
+                    if (dataLines.length === 0) {
+                        alert('No data found in CSV file.');
+                        return;
+                    }
+                    
+                    // Parse CSV and append to existing replacements
+                    const existingReplacements = loadCustomReplacements();
+                    let importedCount = 0;
+                    let duplicateCount = 0;
+                    
+                    dataLines.forEach(line => {
+                        // Simple CSV parsing (handles quoted fields)
+                        const match = line.match(/^"?([^"]*)"?,\s*"?([^"]*)"?$/);
+                        if (match) {
+                            const from = match[1].replace(/""/g, '"').trim();
+                            const to = match[2].replace(/""/g, '"').trim();
+                            
+                            if (from) {
+                                // Check for duplicates
+                                const isDuplicate = existingReplacements.some(r =>
+                                    r.from.toLowerCase() === from.toLowerCase()
+                                );
+                                
+                                if (!isDuplicate) {
+                                    existingReplacements.push({ from, to });
+                                    importedCount++;
+                                } else {
+                                    duplicateCount++;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Save updated list
+                    saveCustomReplacements(existingReplacements);
+                    renderCustomReplacements();
+                    
+                    // Show success message
+                    const successMsg = document.getElementById('simplifierSuccess');
+                    const errorMsg = document.getElementById('simplifierError');
+                    
+                    if (importedCount > 0) {
+                        let message = `✓ Imported ${importedCount} replacement${importedCount !== 1 ? 's' : ''}!`;
+                        if (duplicateCount > 0) {
+                            message += ` (${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} skipped)`;
+                        }
+                        
+                        if (successMsg) {
+                            successMsg.textContent = message;
+                            successMsg.style.display = 'block';
+                            setTimeout(() => {
+                                successMsg.style.display = 'none';
+                            }, 3000);
+                        }
+                    } else if (duplicateCount > 0) {
+                        if (errorMsg) {
+                            errorMsg.textContent = `All ${duplicateCount} rule${duplicateCount !== 1 ? 's' : ''} already exist. No new rules imported.`;
+                            errorMsg.style.display = 'block';
+                            setTimeout(() => {
+                                errorMsg.style.display = 'none';
+                            }, 3000);
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('[RecipeSimplifier] Error importing CSV:', error);
+                    alert('Error importing CSV file. Please check the file format.');
+                }
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        // Trigger file selection
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        document.body.removeChild(fileInput);
+    }
+    
     // ============================================
     // INITIALIZATION
     // ============================================
@@ -786,6 +913,7 @@
         const copyButton = document.getElementById('copyButton');
         const inputTextarea = document.getElementById('recipeInput');
         const addCustomBtn = document.getElementById('addCustomBtn');
+        const importCustomBtn = document.getElementById('importCustomBtn');
         const exportCustomBtn = document.getElementById('exportCustomBtn');
         
         processButton.addEventListener('click', handleProcessClick);
@@ -798,6 +926,7 @@
         
         // Custom replacement buttons
         addCustomBtn.addEventListener('click', addCustomReplacement);
+        importCustomBtn.addEventListener('click', importCustomReplacements);
         exportCustomBtn.addEventListener('click', exportCustomReplacements);
         
         // Initialize character counts
@@ -852,6 +981,7 @@
             applyCustomReplacements,
             addCustomReplacement,
             deleteCustomReplacement,
+            importCustomReplacements,
             exportCustomReplacements,
             renderCustomReplacements
         };
