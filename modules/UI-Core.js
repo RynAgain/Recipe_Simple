@@ -260,7 +260,12 @@
         mainPanel.id = 'recipeToolsPanel';
         mainPanel.className = 'recipe-tools-panel';
         
-        theme.applyStyles(mainPanel, theme.styles.panel);
+        theme.applyStyles(mainPanel, {
+            ...theme.styles.panel,
+            minWidth: '400px',
+            maxWidth: '500px',
+            width: '420px'
+        });
         
         // Header with drag handle
         const header = document.createElement('div');
@@ -345,10 +350,19 @@
         if (savedPosition) {
             mainPanel.style.top = savedPosition.top;
             mainPanel.style.left = savedPosition.left;
+            mainPanel.style.bottom = 'auto';
+            mainPanel.style.right = 'auto';
         } else {
-            // Default position: bottom-right
-            mainPanel.style.bottom = '100px';
-            mainPanel.style.right = '100px';
+            // Default position: bottom-right with proper spacing
+            const defaultBottom = 100;
+            const defaultRight = 100;
+            const panelWidth = 420;
+            const panelHeight = 600;
+            
+            mainPanel.style.top = `${window.innerHeight - panelHeight - defaultBottom}px`;
+            mainPanel.style.left = `${window.innerWidth - panelWidth - defaultRight}px`;
+            mainPanel.style.bottom = 'auto';
+            mainPanel.style.right = 'auto';
         }
         
         document.body.appendChild(mainPanel);

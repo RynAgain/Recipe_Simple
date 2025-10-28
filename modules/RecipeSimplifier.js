@@ -120,6 +120,46 @@
     }
     
     /**
+     * Load custom replacements from storage
+     * @returns {Array} Array of custom replacement objects
+     */
+    function loadCustomReplacements() {
+        const saved = GM_getValue('recipeSimplifier_customReplacements', '[]');
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error('[RecipeSimplifier] Error loading custom replacements:', e);
+            return [];
+        }
+    }
+    
+    /**
+     * Save custom replacements to storage
+     * @param {Array} replacements - Array of replacement objects
+     */
+    function saveCustomReplacements(replacements) {
+        GM_setValue('recipeSimplifier_customReplacements', JSON.stringify(replacements));
+    }
+    
+    /**
+     * Apply custom replacements to text
+     * @param {string} text - Text to process
+     * @param {Array} replacements - Array of {from, to} objects
+     * @returns {string} Processed text
+     */
+    function applyCustomReplacements(text, replacements) {
+        replacements.forEach(rule => {
+            if (rule.from && rule.from.trim()) {
+                // Escape special regex characters in the 'from' string
+                const escapedFrom = rule.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedFrom}\\b`, 'gi');
+                text = text.replace(regex, rule.to || '');
+            }
+        });
+        return text;
+    }
+    
+    /**
      * Simplify ingredients based on options
      * @param {string} text - Text to simplify
      * @param {Object} options - Simplification options
@@ -147,6 +187,12 @@
         
         if (options.removeGMO) {
             text = removeAsterisks(text);
+        }
+        
+        // Apply custom replacements if enabled
+        if (options.useCustomReplacements) {
+            const customReplacements = loadCustomReplacements();
+            text = applyCustomReplacements(text, customReplacements);
         }
         
         return text;
@@ -257,23 +303,54 @@
         inputSection.appendChild(inputLabelRow);
         inputSection.appendChild(inputTextarea);
         
-        // Options section
+        // Options section (collapsible)
         const optionsSection = document.createElement('div');
         theme.applyStyles(optionsSection, theme.styles.inputGroup);
         
+        // Options header (clickable to expand/collapse)
+        const optionsHeader = document.createElement('div');
+        optionsHeader.style.display = 'flex';
+        optionsHeader.style.justifyContent = 'space-between';
+        optionsHeader.style.alignItems = 'center';
+        optionsHeader.style.cursor = 'pointer';
+        optionsHeader.style.padding = '8px 12px';
+        optionsHeader.style.backgroundColor = theme.colors.lightGray;
+        optionsHeader.style.borderRadius = '6px';
+        optionsHeader.style.marginBottom = '8px';
+        optionsHeader.style.userSelect = 'none';
+        
         const optionsLabel = document.createElement('label');
-        optionsLabel.textContent = 'Simplification Options:';
-        theme.applyStyles(optionsLabel, theme.styles.label);
+        optionsLabel.textContent = 'Simplification Options';
+        optionsLabel.style.fontWeight = '600';
+        optionsLabel.style.fontSize = '14px';
+        optionsLabel.style.color = theme.colors.textPrimary;
+        optionsLabel.style.cursor = 'pointer';
+        optionsLabel.style.margin = '0';
+        
+        const optionsToggle = document.createElement('span');
+        optionsToggle.id = 'optionsToggle';
+        optionsToggle.textContent = '▼';
+        optionsToggle.style.fontSize = '12px';
+        optionsToggle.style.color = theme.colors.textSecondary;
+        optionsToggle.style.transition = 'transform 0.2s';
+        
+        optionsHeader.appendChild(optionsLabel);
+        optionsHeader.appendChild(optionsToggle);
+        
+        // Options content (collapsible)
+        const optionsContent = document.createElement('div');
+        optionsContent.id = 'optionsContent';
+        optionsContent.style.display = 'block';
+        optionsContent.style.paddingLeft = '8px';
         
         const options = [
             { id: 'removeWater', label: 'Remove water', checked: true },
             { id: 'simplifySalt', label: 'Simplify salt types (e.g., "Sea Salt" → "Salt")', checked: true },
             { id: 'removeOrganic', label: 'Remove "organic" labels', checked: false },
             { id: 'removeGMO', label: 'Remove GMO-related text and asterisks', checked: true },
-            { id: 'fixCapitalization', label: 'Fix capitalization and brackets', checked: true }
+            { id: 'fixCapitalization', label: 'Fix capitalization and brackets', checked: true },
+            { id: 'useCustomReplacements', label: 'Apply custom replacements', checked: true }
         ];
-        
-        optionsSection.appendChild(optionsLabel);
         
         options.forEach(opt => {
             const checkboxContainer = document.createElement('div');
@@ -294,7 +371,74 @@
             
             checkboxContainer.appendChild(checkbox);
             checkboxContainer.appendChild(label);
-            optionsSection.appendChild(checkboxContainer);
+            optionsContent.appendChild(checkboxContainer);
+        });
+        
+        // Custom replacements section
+        const customSection = document.createElement('div');
+        customSection.style.marginTop = '12px';
+        customSection.style.padding = '12px';
+        customSection.style.backgroundColor = theme.colors.lightGray;
+        customSection.style.borderRadius = '6px';
+        
+        const customHeader = document.createElement('div');
+        customHeader.style.display = 'flex';
+        customHeader.style.justifyContent = 'space-between';
+        customHeader.style.alignItems = 'center';
+        customHeader.style.marginBottom = '8px';
+        
+        const customTitle = document.createElement('strong');
+        customTitle.textContent = 'Custom Replacements';
+        customTitle.style.fontSize = '13px';
+        customTitle.style.color = theme.colors.textPrimary;
+        
+        const customButtons = document.createElement('div');
+        customButtons.style.display = 'flex';
+        customButtons.style.gap = '6px';
+        
+        const exportBtn = document.createElement('button');
+        exportBtn.id = 'exportCustomBtn';
+        exportBtn.textContent = '📥 Export';
+        exportBtn.style.fontSize = '11px';
+        exportBtn.style.padding = '4px 8px';
+        exportBtn.style.border = `1px solid ${theme.colors.border}`;
+        exportBtn.style.borderRadius = '4px';
+        exportBtn.style.backgroundColor = theme.colors.white;
+        exportBtn.style.cursor = 'pointer';
+        
+        const addBtn = document.createElement('button');
+        addBtn.id = 'addCustomBtn';
+        addBtn.textContent = '+ Add';
+        addBtn.style.fontSize = '11px';
+        addBtn.style.padding = '4px 8px';
+        addBtn.style.border = 'none';
+        addBtn.style.borderRadius = '4px';
+        addBtn.style.backgroundColor = theme.colors.primaryGreen;
+        addBtn.style.color = theme.colors.white;
+        addBtn.style.cursor = 'pointer';
+        
+        customButtons.appendChild(exportBtn);
+        customButtons.appendChild(addBtn);
+        customHeader.appendChild(customTitle);
+        customHeader.appendChild(customButtons);
+        
+        const customList = document.createElement('div');
+        customList.id = 'customReplacementsList';
+        customList.style.maxHeight = '150px';
+        customList.style.overflowY = 'auto';
+        
+        customSection.appendChild(customHeader);
+        customSection.appendChild(customList);
+        optionsContent.appendChild(customSection);
+        
+        optionsSection.appendChild(optionsHeader);
+        optionsSection.appendChild(optionsContent);
+        
+        // Toggle collapse on header click
+        optionsHeader.addEventListener('click', () => {
+            const isCollapsed = optionsContent.style.display === 'none';
+            optionsContent.style.display = isCollapsed ? 'block' : 'none';
+            optionsToggle.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
         });
         
         // Process button
@@ -423,7 +567,8 @@
             simplifySalt: document.getElementById('simplifySalt').checked,
             removeOrganic: document.getElementById('removeOrganic').checked,
             removeGMO: document.getElementById('removeGMO').checked,
-            fixCapitalization: document.getElementById('fixCapitalization').checked
+            fixCapitalization: document.getElementById('fixCapitalization').checked,
+            useCustomReplacements: document.getElementById('useCustomReplacements').checked
         };
         
         // Process text
@@ -470,6 +615,150 @@
         }, 2000);
     }
     
+    /**
+     * Render the custom replacements list
+     */
+    function renderCustomReplacements() {
+        const list = document.getElementById('customReplacementsList');
+        if (!list) return;
+        
+        const replacements = loadCustomReplacements();
+        const theme = window.WholeFoodsTheme;
+        
+        list.innerHTML = '';
+        
+        if (replacements.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.textContent = 'No custom replacements yet. Click "+ Add" to create one.';
+            emptyMsg.style.fontSize = '12px';
+            emptyMsg.style.color = theme.colors.textSecondary;
+            emptyMsg.style.fontStyle = 'italic';
+            emptyMsg.style.padding = '8px';
+            list.appendChild(emptyMsg);
+            return;
+        }
+        
+        replacements.forEach((rule, index) => {
+            const item = document.createElement('div');
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.style.alignItems = 'center';
+            item.style.padding = '6px 8px';
+            item.style.marginBottom = '4px';
+            item.style.backgroundColor = theme.colors.white;
+            item.style.borderRadius = '4px';
+            item.style.fontSize = '12px';
+            
+            const ruleText = document.createElement('span');
+            ruleText.textContent = `"${rule.from}" → "${rule.to || '(remove)'}"`;
+            ruleText.style.flex = '1';
+            ruleText.style.color = theme.colors.textPrimary;
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '×';
+            deleteBtn.style.border = 'none';
+            deleteBtn.style.background = 'transparent';
+            deleteBtn.style.color = theme.colors.error;
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.style.fontSize = '18px';
+            deleteBtn.style.padding = '0 4px';
+            deleteBtn.title = 'Delete this replacement';
+            
+            deleteBtn.addEventListener('click', () => {
+                deleteCustomReplacement(index);
+            });
+            
+            item.appendChild(ruleText);
+            item.appendChild(deleteBtn);
+            list.appendChild(item);
+        });
+    }
+    
+    /**
+     * Add a new custom replacement
+     */
+    function addCustomReplacement() {
+        const from = prompt('Enter the text to find (e.g., "red wine"):');
+        if (!from || !from.trim()) return;
+        
+        const to = prompt('Enter the replacement text (leave empty to remove):\n\nExample: "red wine" → "wine"', '');
+        if (to === null) return; // User cancelled
+        
+        const replacements = loadCustomReplacements();
+        replacements.push({
+            from: from.trim(),
+            to: to.trim()
+        });
+        
+        saveCustomReplacements(replacements);
+        renderCustomReplacements();
+        
+        // Show success message
+        const successMsg = document.getElementById('simplifierSuccess');
+        if (successMsg) {
+            successMsg.textContent = '✓ Custom replacement added!';
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 2000);
+        }
+    }
+    
+    /**
+     * Delete a custom replacement
+     * @param {number} index - Index of replacement to delete
+     */
+    function deleteCustomReplacement(index) {
+        const replacements = loadCustomReplacements();
+        replacements.splice(index, 1);
+        saveCustomReplacements(replacements);
+        renderCustomReplacements();
+    }
+    
+    /**
+     * Export custom replacements to CSV
+     */
+    function exportCustomReplacements() {
+        const replacements = loadCustomReplacements();
+        
+        if (replacements.length === 0) {
+            alert('No custom replacements to export.');
+            return;
+        }
+        
+        // Create CSV content
+        let csv = 'From,To\n';
+        replacements.forEach(rule => {
+            // Escape quotes and wrap in quotes if contains comma
+            const from = rule.from.includes(',') ? `"${rule.from.replace(/"/g, '""')}"` : rule.from;
+            const to = rule.to.includes(',') ? `"${rule.to.replace(/"/g, '""')}"` : rule.to;
+            csv += `${from},${to}\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'recipe-custom-replacements.csv');
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        const successMsg = document.getElementById('simplifierSuccess');
+        if (successMsg) {
+            successMsg.textContent = '✓ Custom replacements exported!';
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 2000);
+        }
+    }
+    
     // ============================================
     // INITIALIZATION
     // ============================================
@@ -496,6 +785,8 @@
         const processButton = document.getElementById('processButton');
         const copyButton = document.getElementById('copyButton');
         const inputTextarea = document.getElementById('recipeInput');
+        const addCustomBtn = document.getElementById('addCustomBtn');
+        const exportCustomBtn = document.getElementById('exportCustomBtn');
         
         processButton.addEventListener('click', handleProcessClick);
         copyButton.addEventListener('click', handleCopyClick);
@@ -505,9 +796,16 @@
             updateCharCount('recipeInput', 'inputCharCount');
         });
         
+        // Custom replacement buttons
+        addCustomBtn.addEventListener('click', addCustomReplacement);
+        exportCustomBtn.addEventListener('click', exportCustomReplacements);
+        
         // Initialize character counts
         updateCharCount('recipeInput', 'inputCharCount');
         updateCharCount('recipeOutput', 'outputCharCount');
+        
+        // Render custom replacements list
+        renderCustomReplacements();
     }
     
     // ============================================
@@ -548,7 +846,14 @@
             processRecipeText,
             fixParentheses,
             removeAsterisks,
-            simplifyIngredients
+            simplifyIngredients,
+            loadCustomReplacements,
+            saveCustomReplacements,
+            applyCustomReplacements,
+            addCustomReplacement,
+            deleteCustomReplacement,
+            exportCustomReplacements,
+            renderCustomReplacements
         };
     } catch (e) {
         // Browser environment
