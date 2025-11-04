@@ -387,10 +387,26 @@
         customHeader.style.alignItems = 'center';
         customHeader.style.marginBottom = '8px';
         
+        const customTitleRow = document.createElement('div');
+        customTitleRow.style.display = 'flex';
+        customTitleRow.style.alignItems = 'center';
+        customTitleRow.style.gap = '6px';
+        
         const customTitle = document.createElement('strong');
         customTitle.textContent = 'Custom Replacements';
         customTitle.style.fontSize = '13px';
         customTitle.style.color = theme.colors.textPrimary;
+        
+        // Info icon for tooltip
+        const infoIcon = document.createElement('span');
+        infoIcon.innerHTML = 'ℹ️';
+        infoIcon.style.fontSize = '14px';
+        infoIcon.style.cursor = 'help';
+        infoIcon.style.opacity = '0.7';
+        infoIcon.title = 'Click for best practices';
+        
+        customTitleRow.appendChild(customTitle);
+        customTitleRow.appendChild(infoIcon);
         
         const customButtons = document.createElement('div');
         customButtons.style.display = 'flex';
@@ -433,8 +449,39 @@
         customButtons.appendChild(importBtn);
         customButtons.appendChild(exportBtn);
         customButtons.appendChild(addBtn);
-        customHeader.appendChild(customTitle);
+        customHeader.appendChild(customTitleRow);
         customHeader.appendChild(customButtons);
+        
+        // Best practices tooltip (hidden by default)
+        const tooltip = document.createElement('div');
+        tooltip.id = 'customReplacementsTooltip';
+        tooltip.style.display = 'none';
+        tooltip.style.marginTop = '8px';
+        tooltip.style.padding = '10px';
+        tooltip.style.backgroundColor = '#f5f7fa';
+        tooltip.style.border = `2px solid ${theme.colors.primaryGreen}`;
+        tooltip.style.borderRadius = '6px';
+        tooltip.style.fontSize = '12px';
+        tooltip.style.lineHeight = '1.6';
+        tooltip.innerHTML = `
+            <div style="font-weight:600;color:${theme.colors.primaryGreen};margin-bottom:6px;">📋 Best Practices:</div>
+            <ul style="margin:4px 0 0 18px;padding:0;color:${theme.colors.textPrimary};">
+                <li><strong>Case insensitive:</strong> Matches ignore case (e.g., "Red Wine" = "red wine")</li>
+                <li><strong>Use 2+ words:</strong> Avoid false matches (e.g., "red wine" not "wine")</li>
+                <li><strong>Whole words only:</strong> Won't match partial words (e.g., "salt" won't match "salted")</li>
+                <li><strong>Order matters:</strong> Rules apply top to bottom</li>
+                <li><strong>Empty "To":</strong> Removes the text completely</li>
+            </ul>
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid ${theme.colors.border};font-style:italic;color:${theme.colors.textSecondary};">
+                💡 Tip: Test with a sample before adding many rules
+            </div>
+        `;
+        
+        // Toggle tooltip on info icon click
+        infoIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tooltip.style.display = tooltip.style.display === 'none' ? 'block' : 'none';
+        });
         
         const customList = document.createElement('div');
         customList.id = 'customReplacementsList';
@@ -442,6 +489,7 @@
         customList.style.overflowY = 'auto';
         
         customSection.appendChild(customHeader);
+        customSection.appendChild(tooltip);
         customSection.appendChild(customList);
         optionsContent.appendChild(customSection);
         
