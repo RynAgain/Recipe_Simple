@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Recipe Tools - Whole Foods Edition
 // @namespace    http://tampermonkey.net/
-// @version      1.0.102
+// @version      1.0.103
 // @description  Nutrition and recipe text processing tools with Whole Foods branding
 // @author       RynAgain
 // @match        *://*/*
@@ -12,6 +12,7 @@
 // @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/UI-Core.js
 // @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/UnitConverter.js
 // @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/RecipeSimplifier.js
+// @require      https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/modules/ScratchPad.js
 // @run-at       document-end
 // @updateURL    https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js
 // @downloadURL  https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js
@@ -28,8 +29,7 @@
     // ============================================
     // CONFIGURATION
     // ============================================
-    const CURRENT_VERSION = '1.0.102';
-    console.log(CURRENT_VERSION);
+    const CURRENT_VERSION = '1.0.103'; //Do not change version
     const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/RynAgain/Recipe_Simple/main/MainScript.user.js';
     const VERSION_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
     
